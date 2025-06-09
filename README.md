@@ -37,15 +37,18 @@ Crie arquivo `.env` na raiz:
 
 ```env
 # Banco de dados
-DB_TYPE=mysql          # ou 'postgresql'
+DB_TYPE=mysql
+# ou postgresql
 DB_HOST=localhost
-DB_PORT=3306           # 5432 para PostgreSQL
+DB_PORT=3306
+# 5432 para PostgreSQL
 DB_USER=seu_usuario
 DB_PASSWORD=sua_senha
 DB_NAME=nome_do_banco
 
 # Modelo NSQL
-MODEL_SIZE=350M        # ou '2B'
+MODEL_SIZE=350M
+# ou 2B
 
 # Flask
 FLASK_DEBUG=False

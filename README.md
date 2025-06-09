@@ -2,6 +2,9 @@
 
 Converte perguntas em linguagem natural para consultas SQL usando modelos NSQL.
 
+> **Projeto Acadêmico**
+> Atividade desenvolvida para a disciplina de Introdução a Banco de Dados - UTFPR
+
 ## Requisitos
 
 - Python 3.8+

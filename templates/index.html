@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Text-to-SQL | Consultas de Banco de Dados em Linguagem Natural</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body class="antialiased">
+    <!-- Container de Notificações -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Cabeçalho -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Motor Text-to-SQL</h1>
+                        <p>Consultas de Banco de Dados em Linguagem Natural</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Barra Lateral -->
+        <aside class="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-header">
+                    <i class="fas fa-table"></i>
+                    <h2>Esquema do Banco</h2>
+                </div>
+                
+                <div class="schema-list">
+                    {% for table, columns in schema.items() %}
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3>{{ table }}</h3>
+                            <span class="column-count">{{ columns|length }} colunas</span>
+                        </div>
+                        <div class="columns-grid">
+                            {% for column in columns %}
+                            <span class="column-tag">{{ column }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <!-- Seção de Carregamento -->
+            <div id="loadingSection" class="loading-card hidden">
+                <div class="loading-content">
+                    <i class="fas fa-circle-notch fa-spin loading-icon"></i>
+                    <p class="loading-text">Gerando consulta SQL...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção de Erro -->
+            <div id="errorSection" class="error-card hidden">
+                <div class="error-content">
+                    <div class="error-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="error-details">
+                        <h3>Erro na Consulta</h3>
+                        <div id="errorDisplay" class="error-message">
+                            <!-- Mensagem de erro aparecerá aqui -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Card de Entrada da Consulta -->
+            <div class="query-card">
+                <div class="query-content">
+                    <div class="input-section">
+                        <label for="questionInput" class="input-label">Faça uma pergunta sobre seu banco de dados</label>
+                        <div class="input-wrapper">
+                            <input 
+                                type="text" 
+                                id="questionInput" 
+                                class="question-input" 
+                                placeholder="Ex: How many students are in each department?"
+                                autocomplete="off"
+                            >
+                            <button id="submitBtn" class="submit-button">
+                                <i class="fas fa-play"></i>
+                                <span>Executar</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="examples-section">
+                        <div class="examples-header">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Experimente estes exemplos:</span>
+                        </div>
+                        <div class="examples-grid">
+                            <button class="example-item">
+                                How many students are in each department?
+                            </button>
+                            <button class="example-item">
+                                What is the total budget of all departments?
+                            </button>
+                            <button class="example-item">
+                                Which building has the highest capacity classroom?
+                            </button>
+                            <button class="example-item">
+                                What is the average grade of students?
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Card do SQL Gerado -->
+            <div id="sqlSection" class="sql-card hidden">
+                <div class="card-header">
+                    <div class="header-left">
+                        <i class="fas fa-code"></i>
+                        <h2>SQL Gerada</h2>
+                    </div>
+                    <button id="copySqlBtn" class="copy-button">
+                        <i class="fas fa-copy"></i>
+                        <span>Copiar</span>
+                    </button>
+                </div>
+                <div id="sqlDisplay" class="sql-display">
+                    <!-- SQL aparecerá aqui -->
+                </div>
+            </div>
+            
+            <!-- Card da Tabela de Resultados -->
+            <div id="resultsSection" class="results-card hidden">
+                <div class="card-header">
+                    <div class="header-left">
+                        <i class="fas fa-table"></i>
+                        <h2>Resultados da Consulta</h2>
+                    </div>
+                    <span id="resultCount" class="result-count">0 linhas</span>
+                </div>
+                <div id="resultsDisplay" class="results-container">
+                    <!-- Tabela de resultados aparecerá aqui -->
+                </div>
+                <div class="results-footer">
+                    <div class="footer-left">
+                        <span id="executionTime">Tempo de execução: 0ms</span>
+                    </div>
+                    <div class="footer-right">
+                        <button class="export-button">
+                            <i class="fas fa-download"></i>
+                            <span>Exportar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Painel de Estatísticas -->
+            <div id="statsPanel" class="stats-panel hidden">
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-text">
+                            <p class="stat-label">Total de Consultas</p>
+                            <p id="totalQueries" class="stat-number">0</p>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-text">
+                            <p class="stat-label">Última Execução</p>
+                            <p id="lastExecution" class="stat-number">0ms</p>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-stopwatch"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-text">
+                            <p class="stat-label">Tempo Médio</p>
+                            <p id="avgExecution" class="stat-number">0ms</p>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

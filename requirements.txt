@@ -1,0 +1,8 @@
+Flask
+mysql-connector-python
+psycopg2-binary
+python-dotenv
+transformers
+torch
+sentencepiece
+# accelerate

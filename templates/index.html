@@ -24,6 +24,31 @@
                         <p>Consultas de Banco de Dados em Linguagem Natural</p>
                     </div>
                 </div>
+                
+                <!-- Nova Seção de Informações do Sistema -->
+                <div class="system-info">
+                    <div class="info-card">
+                        <div class="info-item">
+                            <i class="fas fa-server"></i>
+                            <span class="info-label">Banco:</span>
+                            <span class="info-value" id="dbType">{{ system_info.db_type.upper() }}</span>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-item">
+                            <i class="fas fa-database"></i>
+                            <span class="info-label">Database:</span>
+                            <span class="info-value" id="dbName">{{ system_info.db_name }}</span>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-item">
+                            <i class="fas fa-brain"></i>
+                            <span class="info-label">IA:</span>
+                            <span class="info-value" id="aiModel">NSQL-{{ system_info.model_size }}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -34,7 +59,10 @@
             <div class="sidebar-content">
                 <div class="sidebar-header">
                     <i class="fas fa-table"></i>
-                    <h2>Esquema do Banco</h2>
+                    <h2>Esquema </h2>
+                    <div class="schema-stats">
+                        <span class="table-count">{{ schema.items()|length }} tabelas</span>
+                    </div>
                 </div>
                 
                 <div class="schema-list">
@@ -119,7 +147,7 @@
                                 Which building has the highest capacity classroom?
                             </button>
                             <button class="example-item">
-                                What is the average grade of students?
+                                What are the names of students and their department buildings?
                             </button>
                         </div>
                     </div>

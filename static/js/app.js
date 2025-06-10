@@ -1,12 +1,14 @@
 /**
  * Motor Text-to-SQL - Frontend Aprimorado
  * Integra com backend Flask para consultas reais no banco de dados
+ * Versão: Tema Preto + Informações do Sistema
  */
 
 // Estado da Aplicação
 let contadorConsultas = 0;
 let tempoTotalExecucao = 0;
 let consultasBemSucedidas = 0;
+let informacoesSistema = null;
 
 // Cache dos Elementos DOM
 const elementos = {
@@ -27,7 +29,11 @@ const elementos = {
     tempoExecucao: null,
     botaoCopiarSql: null,
     containerToast: null,
-    itensExemplo: null
+    itensExemplo: null,
+    // Novos elementos para informações do sistema
+    dbType: null,
+    dbName: null,
+    aiModel: null
 };
 
 /**
@@ -40,6 +46,12 @@ function inicializarApp() {
     // Configura os ouvintes de eventos
     configurarEventListeners();
     
+    // Carrega informações do sistema
+    carregarInformacoesSistema();
+    
+    // Adiciona efeitos visuais de inicialização
+    adicionarEfeitosInicializacao();
+    
     // Foca no input
     elementos.inputPergunta.focus();
     
@@ -51,7 +63,7 @@ function inicializarApp() {
         }
     }, 1000);
     
-    console.log('🚀 Motor Text-to-SQL inicializado com sucesso!');
+    console.log('Motor Text-to-SQL inicializado com sucesso!');
 }
 
 /**
@@ -76,6 +88,69 @@ function cachearElementos() {
     elementos.botaoCopiarSql = document.getElementById('copySqlBtn');
     elementos.containerToast = document.getElementById('toastContainer');
     elementos.itensExemplo = document.querySelectorAll('.example-item');
+    
+    // Novos elementos
+    elementos.dbType = document.getElementById('dbType');
+    elementos.dbName = document.getElementById('dbName');
+    elementos.aiModel = document.getElementById('aiModel');
+}
+
+/**
+ * Carrega informações do sistema via API
+ */
+async function carregarInformacoesSistema() {
+    try {
+        const resposta = await fetch('/system-info');
+        if (resposta.ok) {
+            informacoesSistema = await resposta.json();
+            atualizarDisplayInformacoesSistema();
+        }
+    } catch (erro) {
+        console.warn('Não foi possível carregar informações do sistema:', erro);
+    }
+}
+
+/**
+ * Atualiza o display das informações do sistema na interface
+ */
+function atualizarDisplayInformacoesSistema() {
+    if (!informacoesSistema) return;
+    
+    // Adiciona efeito de pulse nas informações do sistema
+    const infoCards = document.querySelectorAll('.info-card');
+    infoCards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.animation = 'pulse 0.6s ease-in-out';
+            setTimeout(() => {
+                card.style.animation = '';
+            }, 600);
+        }, index * 100);
+    });
+}
+
+/**
+ * Adiciona efeitos visuais de inicialização
+ */
+function adicionarEfeitosInicializacao() {
+    // Efeito de fade-in para cards principais
+    const cards = document.querySelectorAll('.query-card, .sidebar-content');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 200);
+    });
+    
+    // Efeito especial para o logo
+    const logoIcon = document.querySelector('.logo-icon');
+    if (logoIcon) {
+        setTimeout(() => {
+            logoIcon.style.animation = 'pulse 1s ease-in-out';
+        }, 500);
+    }
 }
 
 /**
@@ -107,6 +182,16 @@ function configurarEventListeners() {
     elementos.inputPergunta.addEventListener('input', lidarComMudancaInput);
     elementos.inputPergunta.addEventListener('focus', lidarComFocoInput);
     elementos.inputPergunta.addEventListener('blur', lidarComBlurInput);
+    
+    // Efeitos hover para cards de schema
+    document.querySelectorAll('.table-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px) scale(1.02)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(-2px) scale(1)';
+        });
+    });
 }
 
 /**
@@ -117,11 +202,16 @@ function definirExemplo(textoExemplo) {
     elementos.inputPergunta.value = textoExemplo;
     elementos.inputPergunta.focus();
     
-    // Adiciona feedback visual
+    // Adiciona feedback visual aprimorado
     elementos.inputPergunta.style.borderColor = 'var(--primary)';
+    elementos.inputPergunta.style.boxShadow = 'var(--shadow-glow)';
     setTimeout(() => {
         elementos.inputPergunta.style.borderColor = '';
-    }, 1000);
+        elementos.inputPergunta.style.boxShadow = '';
+    }, 1500);
+    
+    // Toast informativo
+    mostrarToast('Exemplo selecionado! Pressione Enter ou clique em Executar.', 'info');
 }
 
 /**
@@ -130,13 +220,15 @@ function definirExemplo(textoExemplo) {
 function lidarComMudancaInput() {
     const temValor = elementos.inputPergunta.value.trim().length > 0;
     elementos.botaoSubmit.style.opacity = temValor ? '1' : '0.7';
+    elementos.botaoSubmit.style.transform = temValor ? 'scale(1)' : 'scale(0.95)';
 }
 
 /**
  * Lida com foco no campo de input
  */
 function lidarComFocoInput() {
-    elementos.inputPergunta.parentElement.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+    elementos.inputPergunta.parentElement.style.boxShadow = 'var(--shadow-glow)';
+    elementos.inputPergunta.parentElement.style.transform = 'scale(1.01)';
 }
 
 /**
@@ -144,6 +236,7 @@ function lidarComFocoInput() {
  */
 function lidarComBlurInput() {
     elementos.inputPergunta.parentElement.style.boxShadow = '';
+    elementos.inputPergunta.parentElement.style.transform = 'scale(1)';
 }
 
 /**
@@ -177,6 +270,10 @@ async function executarConsulta() {
     const tempoInicio = Date.now();
     
     try {
+        // Mostra informações da consulta sendo processada
+        const modeloIA = informacoesSistema ? `NSQL-${informacoesSistema.model_size}` : 'NSQL';
+        console.log(`Processando consulta com ${modeloIA}:`, pergunta);
+        
         // Faz requisição à API do Flask
         const resposta = await fetch('/query', {
             method: 'POST',
@@ -240,12 +337,16 @@ async function executarConsulta() {
 function mostrarEstadoCarregamento() {
     elementos.secaoCarregamento.classList.remove('hidden');
     elementos.secaoCarregamento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Adiciona efeito de pulse
+    elementos.secaoCarregamento.style.animation = 'pulse 2s ease-in-out infinite';
 }
 
 /**
  * Esconde estado de carregamento
  */
 function esconderEstadoCarregamento() {
+    elementos.secaoCarregamento.style.animation = '';
     elementos.secaoCarregamento.classList.add('hidden');
 }
 
@@ -257,10 +358,12 @@ function definirBotaoCarregamento(estaCarregando) {
     if (estaCarregando) {
         elementos.botaoSubmit.disabled = true;
         elementos.botaoSubmit.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i><span>Processando...</span>';
+        elementos.botaoSubmit.style.background = 'linear-gradient(135deg, #666666 0%, #333333 100%)';
         elementos.inputPergunta.disabled = true;
     } else {
         elementos.botaoSubmit.disabled = false;
         elementos.botaoSubmit.innerHTML = '<i class="fas fa-play"></i><span>Executar</span>';
+        elementos.botaoSubmit.style.background = 'var(--gradient-primary)';
         elementos.inputPergunta.disabled = false;
     }
 }
@@ -281,6 +384,13 @@ function esconderTodasSecoes() {
 function exibirSqlGerada(sql) {
     elementos.displaySql.textContent = sql;
     elementos.secaoSql.classList.remove('hidden');
+    
+    // Adiciona efeito de digitação
+    elementos.displaySql.style.opacity = '0';
+    setTimeout(() => {
+        elementos.displaySql.style.transition = 'opacity 0.5s ease-in';
+        elementos.displaySql.style.opacity = '1';
+    }, 100);
     
     // Rola para a seção SQL
     setTimeout(() => {
@@ -325,7 +435,7 @@ function exibirResultadosConsulta(dados) {
         // Corpo da tabela
         htmlTabela += '<tbody>';
         linhas.forEach((linha, indice) => {
-            htmlTabela += `<tr>`;
+            htmlTabela += `<tr style="animation: slideUp 0.3s ease-out ${indice * 0.05}s both;">`;
             columns.forEach(coluna => {
                 const valor = linha[coluna];
                 const valorExibicao = valor !== null && valor !== undefined 
@@ -356,6 +466,12 @@ function exibirResultadosConsulta(dados) {
 function exibirErro(mensagemErro) {
     elementos.displayErro.textContent = mensagemErro;
     elementos.secaoErro.classList.remove('hidden');
+    
+    // Efeito de shake para chamar atenção
+    elementos.secaoErro.style.animation = 'shake 0.5s ease-in-out';
+    setTimeout(() => {
+        elementos.secaoErro.style.animation = '';
+    }, 500);
     
     // Rola para o erro
     setTimeout(() => {
@@ -391,6 +507,29 @@ function atualizarEstatisticas(tempoExecucao, foiBemSucedida) {
             elementos.painelStats.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 300);
     }
+    
+    // Adiciona efeito de contagem nos números
+    animarContador(elementos.totalConsultas, contadorConsultas);
+}
+
+/**
+ * Anima contador com efeito de contagem
+ * @param {HTMLElement} elemento - Elemento que contém o número
+ * @param {number} numeroFinal - Número final para animar até
+ */
+function animarContador(elemento, numeroFinal) {
+    const numeroInicial = parseInt(elemento.textContent) || 0;
+    const incremento = Math.ceil((numeroFinal - numeroInicial) / 10);
+    let numeroAtual = numeroInicial;
+    
+    const timer = setInterval(() => {
+        numeroAtual += incremento;
+        if (numeroAtual >= numeroFinal) {
+            numeroAtual = numeroFinal;
+            clearInterval(timer);
+        }
+        elemento.textContent = numeroAtual;
+    }, 50);
 }
 
 /**
@@ -401,18 +540,20 @@ async function copiarSqlParaClipboard() {
         const textoSql = elementos.displaySql.textContent;
         await navigator.clipboard.writeText(textoSql);
         
-        // Feedback visual
+        // Feedback visual aprimorado
         const textoOriginal = elementos.botaoCopiarSql.innerHTML;
         elementos.botaoCopiarSql.innerHTML = '<i class="fas fa-check"></i><span>Copiado!</span>';
-        elementos.botaoCopiarSql.style.background = 'rgba(16, 185, 129, 0.2)';
+        elementos.botaoCopiarSql.style.background = 'rgba(0, 255, 136, 0.2)';
         elementos.botaoCopiarSql.style.borderColor = 'var(--success)';
         elementos.botaoCopiarSql.style.color = 'var(--success)';
+        elementos.botaoCopiarSql.style.transform = 'scale(1.05)';
         
         setTimeout(() => {
             elementos.botaoCopiarSql.innerHTML = textoOriginal;
             elementos.botaoCopiarSql.style.background = '';
             elementos.botaoCopiarSql.style.borderColor = '';
             elementos.botaoCopiarSql.style.color = '';
+            elementos.botaoCopiarSql.style.transform = '';
         }, 2000);
         
         mostrarToast('Consulta SQL copiada para a área de transferência!', 'success');
@@ -461,10 +602,10 @@ function mostrarToast(mensagem, tipo = 'info') {
     // Adiciona ao container
     elementos.containerToast.appendChild(toast);
     
-    // Remove automaticamente após 3 segundos
+    // Remove automaticamente após 4 segundos
     const remocaoAutomatica = setTimeout(() => {
         removerToast(toast);
-    }, 3000);
+    }, 4000);
     
     // Botão de fechar manual
     toast.querySelector('.toast-close').addEventListener('click', () => {
@@ -527,8 +668,14 @@ function debounce(func, espera) {
 // Inicializa aplicação quando DOM é carregado
 document.addEventListener('DOMContentLoaded', inicializarApp);
 
-// Adiciona alguns estilos CSS adicionais para estado de sem resultados
+// Adiciona animação de shake para erros
 const estilosAdicionais = `
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+        20%, 40%, 60%, 80% { transform: translateX(10px); }
+    }
+    
     .no-results {
         display: flex;
         flex-direction: column;

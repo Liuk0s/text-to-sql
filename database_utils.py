@@ -12,6 +12,9 @@ def create_database_connection():
         connection: Objeto de conexão do banco
     """
     logger.info(f"Conectando ao banco de dados: {DB_TYPE.upper()}")
+    logger.debug(f"Host: {DATABASE_CONFIG.get('host')}:{DATABASE_CONFIG.get('port')}")
+    logger.debug(f"Banco: {DATABASE_CONFIG.get('database')}")
+    logger.debug(f"Usuário: {DATABASE_CONFIG.get('user')}")
     
     if DB_TYPE == 'mysql':
         import mysql.connector
@@ -36,6 +39,8 @@ def get_database_cursor(connection, dictionary_mode=False):
     Returns:
         cursor: Cursor do banco de dados
     """
+    logger.debug(f"Criando cursor - modo dicionário: {dictionary_mode}")
+    
     if DB_TYPE == 'mysql':
         return connection.cursor(dictionary=dictionary_mode)
     elif DB_TYPE == 'postgresql':
@@ -55,6 +60,8 @@ def get_database_schema():
     Returns:
         dict: Dicionário com nomes das tabelas como chaves e listas de colunas como valores
     """
+    logger.debug("Iniciando descoberta do schema do banco")
+    
     try:
         # Estabelece conexão com o banco de dados
         connection = create_database_connection()
@@ -62,8 +69,10 @@ def get_database_schema():
         
         # Obtém todos os nomes das tabelas (sintaxe diferente para cada banco)
         if DB_TYPE == 'mysql':
+            logger.debug("Executando: SHOW TABLES")
             cursor.execute("SHOW TABLES")
         elif DB_TYPE == 'postgresql':
+            logger.debug("Executando query para listar tabelas do PostgreSQL")
             cursor.execute("""
                 SELECT table_name 
                 FROM information_schema.tables 
@@ -71,12 +80,15 @@ def get_database_schema():
             """)
         
         tables = cursor.fetchall()
+        logger.info(f"Encontradas {len(tables)} tabelas no banco")
+        
         schema = {}
         
         # Para cada tabela, obtém informações das colunas
         for table_row in tables:
             # Extrai nome da tabela (formato pode variar entre bancos)
             table_name = table_row[0] if isinstance(table_row, tuple) else table_row
+            logger.debug(f"Processando tabela: {table_name}")
             
             if DB_TYPE == 'mysql':
                 cursor.execute(f"DESCRIBE {table_name}")
@@ -89,11 +101,19 @@ def get_database_schema():
             
             columns = cursor.fetchall()
             # Armazena apenas os nomes das colunas (primeiro elemento de cada tupla)
-            schema[table_name] = [column[0] for column in columns]
+            column_names = [column[0] for column in columns]
+            schema[table_name] = column_names
+            
+            logger.debug(f"Tabela {table_name}: {len(column_names)} colunas")
 
         # Limpa a conexão com o banco
         cursor.close()
         connection.close()
+        logger.debug("Conexão com banco fechada")
+        
+        # Log do schema completo
+        total_columns = sum(len(cols) for cols in schema.values())
+        logger.info(f"Schema obtido: {len(schema)} tabelas, {total_columns} colunas total")
         
         return schema
         
@@ -112,12 +132,15 @@ def execute_sql_query(sql_query):
     Returns:
         dict: Dicionário de resultado com status de sucesso, dados e metadados
     """
+    logger.info(f"Executando consulta SQL: {sql_query}")
+    
     try:
         # Estabelece conexão com cursor de dicionário para facilitar o manuseio
         connection = create_database_connection()
         cursor = get_database_cursor(connection, dictionary_mode=True)
         
         # Executa a consulta SQL
+        logger.debug("Executando query no banco de dados...")
         cursor.execute(sql_query)
         query_results = cursor.fetchall()
         
@@ -129,9 +152,13 @@ def execute_sql_query(sql_query):
         else:
             column_names = []
 
+        logger.info(f"Consulta executada com sucesso - {len(query_results)} linhas retornadas")
+        logger.debug(f"Colunas retornadas: {column_names}")
+
         # Limpa a conexão com o banco
         cursor.close()
         connection.close()
+        logger.debug("Conexão com banco fechada")
 
         return {
             'success': True, 
@@ -141,6 +168,7 @@ def execute_sql_query(sql_query):
         }
         
     except Exception as error:
+        logger.warning(f"Erro na execução da consulta: {error}")
         return {
             'success': False, 
             'error': str(error), 

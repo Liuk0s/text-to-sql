@@ -3,7 +3,6 @@ import warnings
 import logging
 from flask import Flask, render_template, request, jsonify, url_for
 
-# Importa nossas funções organizadas
 from config import FLASK_DEBUG, FLASK_PORT, DB_TYPE, DATABASE_CONFIG, MODEL_SIZE
 from database_utils import get_database_schema, execute_sql_query
 from ai_utils import load_model, generate_sql_from_question
